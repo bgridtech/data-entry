@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Library Entry Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="form-container">
+    <h2>📚 Book Entry</h2>
+    <form id="bookForm" autocomplete="off">
+      <input type="text" id="name" name="name" placeholder="Book Name" required autocomplete="off" />
+      <input type="text" id="author" name="author" placeholder="Author Name" required autocomplete="off" />
+      <button type="submit">Submit</button>
+    </form>
+    <div id="error" class="error-message"></div>
+  </div>
+
+  <!-- Modal -->
+  <div id="popup" class="popup hidden">
+    <div class="popup-content">
+      <span id="popup-close" class="close-btn">&times;</span>
+      <div id="popup-text"></div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("bookForm");
+    const popup = document.getElementById("popup");
+    const popupText = document.getElementById("popup-text");
+    const popupClose = document.getElementById("popup-close");
+    const errorBox = document.getElementById("error");
+
+    function showPopup(message) {
+      popupText.innerHTML = message;
+      popup.classList.remove("hidden");
+    }
+
+    function hidePopup() {
+      popup.classList.add("hidden");
+    }
+
+    popupClose.onclick = hidePopup;
+    window.onclick = e => {
+      if (e.target == popup) hidePopup();
+    };
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      errorBox.textContent = ""; // clear previous error
+
+      const name = document.getElementById("name").value.trim().toUpperCase();
+      const author = document.getElementById("author").value.trim().toUpperCase();
+
+      try {
+        let res = await fetch("/submit", {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, author })
+        });
+
+        const result = await res.json();
+
+        if (result.status === "duplicate") {
+          if (confirm(`${result.message}\nBook ID: ${result.book_id}`)) {
+            let confirmRes = await fetch("/submit", {
+              method: "POST",
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name, author, confirm: true })
+            });
+
+            const confirmResult = await confirmRes.json();
+            showPopup(`✅ Book ID: <b>${confirmResult.book_id}</b><br>📦 Quantity: ${confirmResult.qty}`);
+          } else {
+            showPopup("❌ Entry cancelled.");
+          }
+        } else if (result.status === "success") {
+          showPopup(`✅ Book ID: <b>${result.book_id}</b><br>📦 Quantity: ${result.qty}`);
+        }
+
+        // Clear form on success
+        document.getElementById("name").value = "";
+        document.getElementById("author").value = "";
+      } catch (err) {
+        errorBox.textContent = "❌ Error: " + (err.message || "Unknown error");
+      }
+    });
+  </script>
+</body>
+</html>
