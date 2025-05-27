@@ -11,7 +11,7 @@ db_config = {
     'host': 'aws-0-ap-southeast-1.pooler.supabase.com',
     'port': 6543,
     'user': 'postgres.pzqjtrazhpzqcncfdavh',
-    'password': '[YOUR-PASSWORD]',  # Replace with your actual password
+    'password': 'gxkhgtckytchglutcgjgc',  # Replace with your actual password
     'dbname': 'postgres'
 }
 
