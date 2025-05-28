@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: library-flask-app
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: DATABASE_URL
+        value: postgres://postgres.pzqjtrazhpzqcncfdavh:gxkhgtckytchglutcgjgc@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres

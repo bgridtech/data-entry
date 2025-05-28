@@ -1,28 +1,30 @@
 from flask import Flask, request, jsonify, render_template
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from urllib.parse import urlparse
 import threading
+import os
 
 app = Flask(__name__)
 lock = threading.Lock()
 
-# Supabase PostgreSQL connection config
-db_config = {
-    'host': 'aws-0-ap-southeast-1.pooler.supabase.com',
-    'port': 6543,
-    'user': 'postgres.pzqjtrazhpzqcncfdavh',
-    'password': 'gxkhgtckytchglutcgjgc',
-    'dbname': 'postgres'
-}
-
+# PostgreSQL DB connection (from environment variable)
 def get_db_connection():
-    return psycopg2.connect(**db_config, cursor_factory=RealDictCursor)
+    url = urlparse(os.environ['DATABASE_URL'])
+    return psycopg2.connect(
+        host=url.hostname,
+        port=url.port,
+        user=url.username,
+        password=url.password,
+        dbname=url.path[1:],
+        cursor_factory=RealDictCursor
+    )
 
 def generate_new_book_id(cursor):
     cursor.execute("SELECT book_id FROM books ORDER BY book_id ASC")
     rows = cursor.fetchall()
 
-    existing_nums = sorted([int(row['book_id'][2:]) for row in rows])
+    existing_nums = sorted([int(row['book_id'][2:]) for row in rows if row['book_id'].startswith('BK')])
 
     expected = 1
     for num in existing_nums:
@@ -62,13 +64,9 @@ def submit_book():
                         'book_id': existing['book_id']
                     })
                 else:
-                    cursor.execute(
-                        "UPDATE books SET qty = qty + 1 WHERE id = %s RETURNING qty, book_id",
-                        (existing['id'],)
-                    )
-                    updated = cursor.fetchone()
+                    cursor.execute("UPDATE books SET qty = qty + 1 WHERE id = %s", (existing['id'],))
                     conn.commit()
-                    return jsonify({'status': 'success', 'book_id': updated['book_id'], 'qty': updated['qty']})
+                    return jsonify({'status': 'success', 'book_id': existing['book_id'], 'qty': existing['qty'] + 1})
             else:
                 book_id = generate_new_book_id(cursor)
                 cursor.execute(
