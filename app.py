@@ -6,12 +6,12 @@ import threading
 app = Flask(__name__)
 lock = threading.Lock()
 
-# Configure Supabase PostgreSQL DB connection
+# Supabase PostgreSQL connection config
 db_config = {
     'host': 'aws-0-ap-southeast-1.pooler.supabase.com',
     'port': 6543,
     'user': 'postgres.pzqjtrazhpzqcncfdavh',
-    'password': 'gxkhgtckytchglutcgjgc',  # Replace with your actual password
+    'password': 'gxkhgtckytchglutcgjgc',
     'dbname': 'postgres'
 }
 
@@ -43,6 +43,8 @@ def submit_book():
         data = request.json
         name = data['name'].strip().upper()
         author = data['author'].strip().upper()
+        shelf = data['shelf']
+        cabinet = data['cabinet']
         confirm = data.get('confirm', False)
 
         with lock:
@@ -60,15 +62,18 @@ def submit_book():
                         'book_id': existing['book_id']
                     })
                 else:
-                    cursor.execute("UPDATE books SET qty = qty + 1 WHERE id = %s RETURNING qty, book_id", (existing['id'],))
+                    cursor.execute(
+                        "UPDATE books SET qty = qty + 1 WHERE id = %s RETURNING qty, book_id",
+                        (existing['id'],)
+                    )
                     updated = cursor.fetchone()
                     conn.commit()
                     return jsonify({'status': 'success', 'book_id': updated['book_id'], 'qty': updated['qty']})
             else:
                 book_id = generate_new_book_id(cursor)
                 cursor.execute(
-                    "INSERT INTO books (book_id, name, author, qty) VALUES (%s, %s, %s, %s)",
-                    (book_id, name, author, 1)
+                    "INSERT INTO books (book_id, name, author, shelf, cabinet, qty) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (book_id, name, author, shelf, cabinet, 1)
                 )
                 conn.commit()
                 return jsonify({'status': 'success', 'book_id': book_id, 'qty': 1})

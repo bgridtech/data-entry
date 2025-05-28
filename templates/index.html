@@ -12,6 +12,27 @@
     <form id="bookForm" autocomplete="off">
       <input type="text" id="name" name="name" placeholder="Book Name" required autocomplete="off" />
       <input type="text" id="author" name="author" placeholder="Author Name" required autocomplete="off" />
+      
+      <!-- Dropdown for Shelf Number -->
+      <label for="shelf">Shelf (Horizontal) No:</label>
+      <select id="shelf" name="shelf" required>
+        <option value="" disabled selected>Select Shelf</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+
+      <!-- Dropdown for Cabinet Number -->
+      <label for="cabinet">Cabinet No:</label>
+      <select id="cabinet" name="cabinet" required>
+        <option value="" disabled selected>Select Cabinet</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+      </select>
+
       <button type="submit">Submit</button>
     </form>
     <div id="error" class="error-message"></div>
@@ -52,12 +73,14 @@
 
       const name = document.getElementById("name").value.trim().toUpperCase();
       const author = document.getElementById("author").value.trim().toUpperCase();
+      const shelf = document.getElementById("shelf").value;
+      const cabinet = document.getElementById("cabinet").value;
 
       try {
         let res = await fetch("/submit", {
           method: "POST",
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, author })
+          body: JSON.stringify({ name, author, shelf, cabinet })
         });
 
         const result = await res.json();
@@ -67,7 +90,7 @@
             let confirmRes = await fetch("/submit", {
               method: "POST",
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name, author, confirm: true })
+              body: JSON.stringify({ name, author, shelf, cabinet, confirm: true })
             });
 
             const confirmResult = await confirmRes.json();
@@ -82,6 +105,7 @@
         // Clear form on success
         document.getElementById("name").value = "";
         document.getElementById("author").value = "";
+
       } catch (err) {
         errorBox.textContent = "❌ Error: " + (err.message || "Unknown error");
       }
